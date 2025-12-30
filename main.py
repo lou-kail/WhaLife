@@ -2,17 +2,23 @@ from dash import Dash, html, dcc, callback, Output, Input
 import plotly.express as px
 import pandas as pd
 
+# Components
+
+from src.components.header import header
+from src.components.map import map_component
+from src.components.histogram import histogram
+
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder_unfiltered.csv')
 
 app = Dash(__name__)
 
 app.layout = html.Div([
-    html.H1("Dashboard", style={'textAlign': 'center'}),
+    header(),
     dcc.Dropdown(df.country.unique(), 'Canada', id='dropdown-selection'),
 
     html.Div([
-        dcc.Graph(id='graph-histogram', style={'width': '48%', 'display': 'inline-block'}),
-        dcc.Graph(id='graph-map', style={'width': '48%', 'display': 'inline-block'})
+        histogram(),
+        map_component()
     ])
 ])
 
