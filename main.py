@@ -16,6 +16,7 @@ from src.utils.get_data import get_data
 from src.components.header import header
 from src.components.map import map_component
 from src.components.histogram import histogram
+from src.components.model_viewer import model_viewer
 
 app = Dash(__name__)
 
@@ -64,7 +65,8 @@ app.layout = html.Div([
 
     html.Div([
         histogram(),
-        map_component()
+        map_component(),
+        # model_viewer("/assets/test.glb")
     ])
 ])
 
