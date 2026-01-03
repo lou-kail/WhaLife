@@ -66,7 +66,7 @@ app.layout = html.Div([
     html.Div([
         histogram(),
         map_component(),
-        # model_viewer("/assets/test.glb")
+        model_viewer("/assets/dolphin.glb")
     ])
 ])
 
