@@ -10,7 +10,7 @@ def get_data(taxon_id: int, size: int = 300):
     base_url = "https://api.obis.org/v3/occurrence"
 
     params = {
-        "taxon_id": taxon_id,
+        "taxonid": taxon_id,
         "size": size
     }
 
