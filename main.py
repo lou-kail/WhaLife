@@ -2,24 +2,47 @@ from dash import Dash, html, dcc, callback, Output, Input
 import plotly.express as px
 import pandas as pd
 
+# Components
+
+from src.components.header import header
+from src.components.map import map_component
+from src.components.histogram import histogram
+
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder_unfiltered.csv')
 
-app = Dash()
+app = Dash(__name__)
 
-# Requires Dash 2.17.0 or later
-app.layout = [
-    html.H1(children='Title of Dash App', style={'textAlign':'center'}),
+app.layout = html.Div([
+    header(),
     dcc.Dropdown(df.country.unique(), 'Canada', id='dropdown-selection'),
-    dcc.Graph(id='graph-content')
-]
+
+    html.Div([
+        histogram(),
+        map_component()
+    ])
+])
+
 
 @callback(
-    Output('graph-content', 'figure'),
+    Output('graph-histogram', 'figure'),
+    Output('graph-map', 'figure'),
     Input('dropdown-selection', 'value')
 )
-def update_graph(value):
-    dff = df[df.country==value]
-    return px.line(dff, x='year', y='pop')
+def update_graphs(country_value):
+    dff = df[df.country == country_value]
+
+    fig_hist = px.bar(dff, x='year', y='pop', title=f"Population : {country_value}")
+
+    fig_map = px.choropleth(
+        dff,
+        locations="country",
+        locationmode="country names",
+        color="lifeExp",
+        title="Localisation"
+    )
+
+    return fig_hist, fig_map
+
 
 if __name__ == '__main__':
     app.run(debug=True)
