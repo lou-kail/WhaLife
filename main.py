@@ -6,12 +6,8 @@ from pathlib import Path
 
 from config import TAXON_IDS
 
-# Data Handling Utils
-
 from src.utils.clean_data import clean_data
 from src.utils.get_data import get_data
-
-# Components
 
 from src.components.header import header
 from src.components.map import map_component
@@ -54,7 +50,7 @@ else:
     df = clean_data(raw_df)
     df.to_csv(CLEANED_FILE, index=False)
 
-#Page pour les espèces
+# Page Espece
 layout_species = html.Div([
     html.H2("Analysis by Species"),
     html.Label("Select Species to Analyze:"),
@@ -70,9 +66,9 @@ layout_species = html.Div([
     ])
 ])
 
-#Page profondeur
+# Page Profondeur
 max_depth = int(df['bathymetry'].max())
-step_marks = max_depth // 5  # Division entière pour avoir 5 étapes
+step_marks_depth = max_depth // 5
 
 layout_depth = html.Div([
     html.H2("Analysis by Depth"),
@@ -85,31 +81,40 @@ layout_depth = html.Div([
             max=df['bathymetry'].max(),
             step=50,
             value=[df['bathymetry'].min(), df['bathymetry'].max()],
-            marks={i: f'{i}m' for i in range(0, max_depth + 1, step_marks)},
+            marks={i: f'{i}m' for i in range(0, max_depth + 1, step_marks_depth)},
+            tooltip={"placement": "bottom", "always_visible": True},
             id='depth-slider'
         )
     ], style={'padding': '20px'}),
-    dcc.Graph(id='graph-depth-map')
+    html.Div([
+        dcc.Graph(id='graph-depth-map', style={'width': '48%', 'display': 'inline-block'}),
+        dcc.Graph(id='graph-depth-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+    ])
 ])
 
-#Page distance des cotes
-max_dist = int(df['shoredistance'].max())
-step_marks = max_dist // 5  # Division entière pour avoir 5 étapes
+# Page Distance des Cotes
+max_dist_val = df['shoredistance'].quantile(0.98)
+max_dist = int(max_dist_val)
+step = max_dist // 5
+if step == 0: step = 1
+magnitude = 10 ** (len(str(step)) - 1)
+clean_step = round(step / magnitude) * magnitude
+if clean_step == 0: clean_step = step
 
 layout_distance = html.Div([
     html.H2("Analysis by Distance to Coast"),
     html.Label("Select Distance:"),
 
     html.Div([
-        html.Label("Filter by distance (meters):"),
+        html.Label(f"Filter by distance (0 - {max_dist} meters):"),
         dcc.RangeSlider(
-            min=df['shoredistance'].min(),
-            max=df['shoredistance'].max(),
-            step=50,  # L'utilisateur peut choisir précisément
-            value=[df['shoredistance'].min(), df['shoredistance'].max()],
-            marks={i: f'{i}m' for i in range(0, max_dist + 1, step_marks)},
+            min=0,
+            max=max_dist,
+            step=clean_step / 10,  # Permet un ajustement fin
+            value=[0, max_dist],
+            # Génération des marques lisibles toutes les X étapes
+            marks={i: f'{i}m' for i in range(0, max_dist + 1, int(clean_step))},
             tooltip={"placement": "bottom", "always_visible": True},
-
             id='distance-slider'
         )
     ], style={'padding': '20px'}),
@@ -119,7 +124,7 @@ layout_distance = html.Div([
     ])
 ])
 
-#Principale
+# Layout Principal
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     header(),
@@ -131,6 +136,9 @@ app.layout = html.Div([
     html.Div(id='page-content')
 ])
 
+
+# --- Callbacks ---
+
 @app.callback(Output('page-content', 'children'),
               Input('url', 'pathname'))
 def display_page(pathname):
@@ -141,6 +149,7 @@ def display_page(pathname):
     else:
         return layout_species
 
+
 @app.callback(
     Output('graph-histogram', 'figure'),
     Output('graph-map', 'figure'),
@@ -148,14 +157,12 @@ def display_page(pathname):
 )
 def update_graphs(selected_category):
     dff = df[df['category'] == selected_category]
-
     print(f"Selected: {selected_category} | Rows found: {len(dff)}")
 
     if dff.empty:
         return px.scatter(title="No data found"), px.scatter_map(title="No data found")
 
     fig_hist = px.histogram(dff, x='year', title=f"Observations: {selected_category}")
-
     fig_map = px.scatter_map(
         dff,
         lat="latitude",
@@ -169,12 +176,16 @@ def update_graphs(selected_category):
 
 @app.callback(
     Output('graph-depth-map', 'figure'),
+    Output('graph-depth-hist', 'figure'),
     Input('depth-slider', 'value')
 )
 def update_depth(depth_range):
+    if not depth_range: return px.scatter(), px.histogram()  # Sécurité
+
     min_depth, max_depth = depth_range
     dff = df[(df['bathymetry'] >= min_depth) & (df['bathymetry'] <= max_depth)]
-    fig = px.scatter_map(
+
+    fig_map = px.scatter_map(
         dff,
         lat="latitude",
         lon="longitude",
@@ -183,9 +194,21 @@ def update_depth(depth_range):
         zoom=1,
         map_style="open-street-map",
         title=f"Distribution by species (Depth: {min_depth}m to {max_depth}m)",
-        hover_data = ['bathymetry']
+        hover_data=['bathymetry']
     )
-    return fig
+    fig_hist = px.histogram(
+        dff,
+        x="bathymetry",
+        color="category",
+        facet_col="category",
+        facet_col_wrap=2,
+        title="Species Distribution by Depth",
+        labels={'bathymetry': 'Depth (m)', 'count': 'Obs.'},
+        nbins=20
+    )
+    fig_hist.update_yaxes(matches=None, showticklabels=True)
+    fig_hist.update_xaxes(matches='x')
+    return fig_map, fig_hist
 
 
 @app.callback(
@@ -194,11 +217,11 @@ def update_depth(depth_range):
     Input('distance-slider', 'value')
 )
 def update_distance(distance_range):
-    min_dist, max_dist = distance_range
-
-    # Filtrage
+    if not distance_range:
+        min_dist, max_dist = 0, df['shoredistance'].max()
+    else:
+        min_dist, max_dist = distance_range
     dff = df[(df['shoredistance'] >= min_dist) & (df['shoredistance'] <= max_dist)]
-
     fig_map = px.scatter_map(
         dff,
         lat="latitude",
@@ -214,14 +237,17 @@ def update_distance(distance_range):
         dff,
         x="shoredistance",
         color="category",
+        facet_col="category",
+        facet_col_wrap=2,
         title="Species Distribution by Distance",
-        labels={'shoredistance': 'Distance to Coast (m)', 'count': 'Number of Observations'},
-        nbins=30,
-        barmode='overlay',
-        opacity=0.7
+        labels={'shoredistance': 'Distance (m)', 'count': 'Obs.'},
+        nbins=20
     )
+    fig_hist.update_yaxes(matches=None, showticklabels=True)
+    fig_hist.update_xaxes(matches='x')
 
     return fig_map, fig_hist
+
 
 if __name__ == '__main__':
     app.run(debug=True)
