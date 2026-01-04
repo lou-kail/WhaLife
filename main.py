@@ -18,7 +18,7 @@ from src.components.map import map_component
 from src.components.histogram import histogram
 from src.components.model_viewer import model_viewer
 
-app = Dash(__name__)
+app = Dash(__name__, suppress_callback_exceptions=True)
 
 data = {}
 compiled_data = []
@@ -54,15 +54,15 @@ else:
     df = clean_data(raw_df)
     df.to_csv(CLEANED_FILE, index=False)
 
-app.layout = html.Div([
-    header(),
+#Page pour les espèces
+layout_species = html.Div([
+    html.H2("Analysis by Species"),
     html.Label("Select Species to Analyze:"),
     dcc.Dropdown(
         options=[{'label': i, 'value': i} for i in df['category'].unique()],
         value=df['category'].unique()[0],
         id='species-selection'
     ),
-
     html.Div([
         histogram(),
         map_component(),
@@ -70,6 +70,43 @@ app.layout = html.Div([
     ])
 ])
 
+#Page profondeur
+layout_depth = html.Div([
+    html.H2("Analysis by Depth"),
+    html.Label("Select Depth:"),
+
+    html.Div([
+        html.Label("Filtrer par profondeur (mètres) :"),
+        dcc.RangeSlider(
+            min=df['bathymetry'].min(),
+            max=df['bathymetry'].max(),
+            step=50,
+            value=[df['bathymetry'].min(), df['bathymetry'].max()],
+            marks={int(i): str(int(i)) for i in range(int(df['bathymetry'].min()), int(df['bathymetry'].max()), 1000)},
+            id='depth-slider'
+        )
+    ], style={'padding': '20px'}),
+    dcc.Graph(id='graph-depth-map')
+])
+
+#Principale
+app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
+    header(),
+    html.Div([
+        dcc.Link(html.Button('Species'), href='/'),
+        dcc.Link(html.Button('Depth'), href='/depth', style={'marginLeft': '10px'}),
+    ], style={'textAlign': 'center', 'padding': '10px'}),
+    html.Div(id='page-content')
+])
+
+@callback(Output('page-content', 'children'),
+              Input('url', 'pathname'))
+def display_page(pathname):
+    if pathname == '/depth':
+        return layout_depth
+    else:
+        return layout_species
 
 @callback(
     Output('graph-histogram', 'figure'),
@@ -94,9 +131,27 @@ def update_graphs(selected_category):
         zoom=1,
         title=f"Locations: {selected_category}"
     )
-
     return fig_hist, fig_map
 
+
+@callback(
+    Output('graph-depth-map', 'figure'),
+    Input('depth-slider', 'value')
+)
+def update_depth_map(depth_range):
+    min_depth, max_depth = depth_range
+    dff = df[(df['bathymetry'] >= min_depth) & (df['bathymetry'] <= max_depth)]
+    fig = px.scatter_map(
+        dff,
+        lat="latitude",
+        lon="longitude",
+        color="category",
+        size_max=15,
+        zoom=1,
+        map_style="open-street-map",
+        title=f"Distribution by species (Depth: {min_depth}m to {max_depth}m)"
+    )
+    return fig
 
 if __name__ == '__main__':
     app.run(debug=True)
