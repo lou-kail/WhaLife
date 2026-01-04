@@ -9,6 +9,7 @@ def model_viewer(file_path):
             src="{file_path}" 
             style="width: 100vw; height: 100vh;" 
             camera-controls 
+            autoplay
             auto-rotate>
         </model-viewer>
     '''
