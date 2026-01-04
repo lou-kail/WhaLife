@@ -42,4 +42,10 @@ def clean_data(df):
 
     df_clean = df_clean.dropna(subset=['latitude', 'longitude'])
 
+    if 'bathymetry' in df_clean.columns:
+        df_clean['bathymetry'] = df_clean['bathymetry'].abs()
+
+    if 'shoredistance' in df_clean.columns:
+        df_clean['shoredistance'] = df_clean['shoredistance'].abs()
+
     return df_clean

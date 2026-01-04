@@ -1,4 +1,4 @@
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import Dash, html, dcc, Output, Input
 import plotly.express as px
 import pandas as pd
 import os
@@ -71,22 +71,52 @@ layout_species = html.Div([
 ])
 
 #Page profondeur
+max_depth = int(df['bathymetry'].max())
+step_marks = max_depth // 5  # Division entière pour avoir 5 étapes
+
 layout_depth = html.Div([
     html.H2("Analysis by Depth"),
     html.Label("Select Depth:"),
 
     html.Div([
-        html.Label("Filtrer par profondeur (mètres) :"),
+        html.Label("Filter by depth (meters) :"),
         dcc.RangeSlider(
             min=df['bathymetry'].min(),
             max=df['bathymetry'].max(),
             step=50,
             value=[df['bathymetry'].min(), df['bathymetry'].max()],
-            marks={int(i): str(int(i)) for i in range(int(df['bathymetry'].min()), int(df['bathymetry'].max()), 1000)},
+            marks={i: f'{i}m' for i in range(0, max_depth + 1, step_marks)},
             id='depth-slider'
         )
     ], style={'padding': '20px'}),
     dcc.Graph(id='graph-depth-map')
+])
+
+#Page distance des cotes
+max_dist = int(df['shoredistance'].max())
+step_marks = max_dist // 5  # Division entière pour avoir 5 étapes
+
+layout_distance = html.Div([
+    html.H2("Analysis by Distance to Coast"),
+    html.Label("Select Distance:"),
+
+    html.Div([
+        html.Label("Filter by distance (meters):"),
+        dcc.RangeSlider(
+            min=df['shoredistance'].min(),
+            max=df['shoredistance'].max(),
+            step=50,  # L'utilisateur peut choisir précisément
+            value=[df['shoredistance'].min(), df['shoredistance'].max()],
+            marks={i: f'{i}m' for i in range(0, max_dist + 1, step_marks)},
+            tooltip={"placement": "bottom", "always_visible": True},
+
+            id='distance-slider'
+        )
+    ], style={'padding': '20px'}),
+    html.Div([
+        dcc.Graph(id='graph-distance-map', style={'width': '48%', 'display': 'inline-block'}),
+        dcc.Graph(id='graph-distance-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+    ])
 ])
 
 #Principale
@@ -96,19 +126,22 @@ app.layout = html.Div([
     html.Div([
         dcc.Link(html.Button('Species'), href='/'),
         dcc.Link(html.Button('Depth'), href='/depth', style={'marginLeft': '10px'}),
+        dcc.Link(html.Button('Distance'), href='/distance', style={'marginLeft': '10px'}),
     ], style={'textAlign': 'center', 'padding': '10px'}),
     html.Div(id='page-content')
 ])
 
-@callback(Output('page-content', 'children'),
+@app.callback(Output('page-content', 'children'),
               Input('url', 'pathname'))
 def display_page(pathname):
     if pathname == '/depth':
         return layout_depth
+    elif pathname == '/distance':
+        return layout_distance
     else:
         return layout_species
 
-@callback(
+@app.callback(
     Output('graph-histogram', 'figure'),
     Output('graph-map', 'figure'),
     Input('species-selection', 'value')
@@ -134,11 +167,11 @@ def update_graphs(selected_category):
     return fig_hist, fig_map
 
 
-@callback(
+@app.callback(
     Output('graph-depth-map', 'figure'),
     Input('depth-slider', 'value')
 )
-def update_depth_map(depth_range):
+def update_depth(depth_range):
     min_depth, max_depth = depth_range
     dff = df[(df['bathymetry'] >= min_depth) & (df['bathymetry'] <= max_depth)]
     fig = px.scatter_map(
@@ -149,9 +182,46 @@ def update_depth_map(depth_range):
         size_max=15,
         zoom=1,
         map_style="open-street-map",
-        title=f"Distribution by species (Depth: {min_depth}m to {max_depth}m)"
+        title=f"Distribution by species (Depth: {min_depth}m to {max_depth}m)",
+        hover_data = ['bathymetry']
     )
     return fig
+
+
+@app.callback(
+    Output('graph-distance-map', 'figure'),
+    Output('graph-distance-hist', 'figure'),
+    Input('distance-slider', 'value')
+)
+def update_distance(distance_range):
+    min_dist, max_dist = distance_range
+
+    # Filtrage
+    dff = df[(df['shoredistance'] >= min_dist) & (df['shoredistance'] <= max_dist)]
+
+    fig_map = px.scatter_map(
+        dff,
+        lat="latitude",
+        lon="longitude",
+        color="category",
+        size_max=15,
+        zoom=1,
+        map_style="open-street-map",
+        title=f"Locations (Distance: {min_dist}m - {max_dist}m)",
+        hover_data=['shoredistance']
+    )
+    fig_hist = px.histogram(
+        dff,
+        x="shoredistance",
+        color="category",
+        title="Species Distribution by Distance",
+        labels={'shoredistance': 'Distance to Coast (m)', 'count': 'Number of Observations'},
+        nbins=30,
+        barmode='overlay',
+        opacity=0.7
+    )
+
+    return fig_map, fig_hist
 
 if __name__ == '__main__':
     app.run(debug=True)
