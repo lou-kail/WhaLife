@@ -1,0 +1,8 @@
+body{
+    font-family: Arial, sans-serif;
+}
+
+@font-face {
+    font-family: 'Gluten';
+    src: url('Gluten/static/Gluten-Light.ttf') format('truetype');
+}
