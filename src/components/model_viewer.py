@@ -1,7 +1,6 @@
 from dash import html
 
 def model_viewer(file_path):
-
     viewer_html = f'''
         <script type="module" src="/assets/model-viewer.min.js"></script>
         <style>body {{ margin: 0; background-color: #f4f4f4; }}</style>        
@@ -15,6 +14,7 @@ def model_viewer(file_path):
     '''
 
     return html.Iframe(
+        id='model-viewer',
         srcDoc=viewer_html,
         style={
             'width': '100%',
