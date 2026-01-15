@@ -16,6 +16,7 @@ from src.components.model_viewer import model_viewer
 
 app = Dash(__name__, suppress_callback_exceptions=True)
 
+app.title = "WhaLife"
 data = {}
 compiled_data = []
 if not os.path.exists("data/cleaned"):
@@ -48,6 +49,18 @@ else:
 
     df = clean_data(raw_df)
     df.to_csv(CLEANED_FILE, index=False)
+
+# Style pour le menu de navigation
+menu_button_style = {
+    'backgroundColor': '#007bff',
+    'color': 'white',
+    'border': 'none',
+    'borderRadius': '20px',
+    'padding': '10px 20px',
+    'cursor': 'pointer',
+    'fontSize': '16px',
+    'fontWeight': 'bold'
+}
 # Page Espece
 layout_species = html.Div([
     html.H2("Analysis by Species"),
@@ -109,9 +122,8 @@ layout_distance = html.Div([
         dcc.RangeSlider(
             min=0,
             max=max_dist,
-            step=clean_step / 10,  # Permet un ajustement fin
+            step=clean_step / 10,
             value=[0, max_dist],
-            # Génération des marques lisibles toutes les X étapes
             marks={i: f'{i}m' for i in range(0, max_dist + 1, int(clean_step))},
             tooltip={"placement": "bottom", "always_visible": True},
             id='distance-slider'
@@ -123,14 +135,72 @@ layout_distance = html.Div([
     ])
 ])
 
+# Page temperature
+min_temp = df['sst'].min()
+max_temp = df['sst'].max()
+layout_temperature = html.Div([
+    html.H2("Analysis by Water Temperature"),
+    html.Label("Select Temperature Range (°C):"),
+
+    html.Div([
+        html.Label(f"Filter by temperature ({int(min_temp)}°C - {int(max_temp)}°C):"),
+        dcc.RangeSlider(
+            min=int(min_temp),
+            max=int(max_temp) + 1,
+            step=0.5,
+            value=[int(min_temp), int(max_temp)],
+            marks={i: f'{i}°C' for i in range(int(min_temp), int(max_temp) + 1, 5)},
+            tooltip={"placement": "bottom", "always_visible": True},
+            id='temp-slider'
+        )
+    ], style={'padding': '20px'}),
+
+    html.Div([
+        # Carte à gauche
+        dcc.Graph(id='graph-temp-map', style={'width': '48%', 'display': 'inline-block'}),
+        # Histogramme à droite
+        dcc.Graph(id='graph-temp-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+    ])
+])
+
+# Page salinité
+min_sal = df['sss'].min()
+max_sal = df['sss'].max()
+layout_salinity = html.Div([
+    html.H2("Analysis by Water Salinity"),
+    html.Label("Select Salinity Range (g/L):"),
+
+    html.Div([
+        html.Label(f"Filter by salinity ({int(min_sal)}g/L - {int(max_sal)}g/L):"),
+        dcc.RangeSlider(
+            min=min_sal,
+            max=max_sal, #int(max_sal) + 1,
+            step=0.5,
+            value=[min_sal, max_sal],
+            marks={i: f'{i}g/L' for i in range(int(min_sal), int(max_sal) + 1, 5)},
+            tooltip={"placement": "bottom", "always_visible": True},
+            id='sal-slider'
+        )
+    ], style={'padding': '20px'}),
+
+    html.Div([
+        # Carte à gauche
+        dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
+        # Histogramme à droite
+        dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+    ])
+])
+
 # Layout Principal
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     header(),
     html.Div([
-        dcc.Link(html.Button('Species'), href='/'),
-        dcc.Link(html.Button('Depth'), href='/depth', style={'marginLeft': '10px'}),
-        dcc.Link(html.Button('Distance'), href='/distance', style={'marginLeft': '10px'}),
+        dcc.Link(html.Button('Species', style=menu_button_style), href='/'),
+        dcc.Link(html.Button('Depth', style=menu_button_style), href='/depth', style={'marginLeft': '10px'}),
+        dcc.Link(html.Button('Distance', style=menu_button_style), href='/distance', style={'marginLeft': '10px'}),
+        dcc.Link(html.Button('Temperature', style=menu_button_style), href='/temperature', style={'marginLeft': '10px'}),
+        dcc.Link(html.Button('Salinity', style=menu_button_style), href='/salinity', style={'marginLeft': '10px'}),
     ], style={'textAlign': 'center', 'padding': '10px'}),
     html.Div(id='page-content')
 ])
@@ -145,6 +215,10 @@ def display_page(pathname):
         return layout_depth
     elif pathname == '/distance':
         return layout_distance
+    elif pathname == '/temperature':
+        return layout_temperature
+    elif pathname == '/salinity':
+        return layout_salinity
     else:
         return layout_species
 
@@ -249,6 +323,83 @@ def update_distance(distance_range):
 
     return fig_map, fig_hist
 
+@app.callback(
+    Output('graph-temp-map', 'figure'),
+    Output('graph-temp-hist', 'figure'),
+    Input('temp-slider', 'value')
+)
+def update_temperature(temp_range):
+    if not temp_range:
+        current_min, current_max = min_temp, max_temp
+    else:
+        current_min, current_max = temp_range
+
+    dff = df[(df['sst'] >= current_min) & (df['sst'] <= current_max)]
+
+    fig_map = px.scatter_map(
+        dff,
+        lat="latitude",
+        lon="longitude",
+        color="category",
+        size_max=15,
+        zoom=1,
+        map_style="open-street-map",
+        title=f"Locations (Temp: {current_min}°C - {current_max}°C)",
+        hover_data=['sst']
+    )
+    fig_hist = px.histogram(
+        dff,
+        x="sst",
+        color="category",
+        facet_col="category",
+        facet_col_wrap=2,
+        title="Species Distribution by Temperature",
+        labels={'sst': 'Temperature (°C)', 'count': 'Obs.'},
+        nbins=20
+    )
+    fig_hist.update_yaxes(matches=None, showticklabels=True)
+    fig_hist.update_xaxes(matches='x')
+
+    return fig_map, fig_hist
+
+@app.callback(
+    Output('graph-sal-map', 'figure'),
+    Output('graph-sal-hist', 'figure'),
+    Input('sal-slider', 'value')
+)
+def update_salinity(sal_range):
+    if not sal_range:
+        current_min, current_max = min_sal, max_sal
+    else:
+        current_min, current_max = sal_range
+
+    dff = df[(df['sss'] >= current_min) & (df['sss'] <= current_max)]
+
+    fig_map = px.scatter_map(
+        dff,
+        lat="latitude",
+        lon="longitude",
+        color="category",
+        size_max=15,
+        zoom=1,
+        map_style="open-street-map",
+        title=f"Locations (Sal: {current_min}g/L - {current_max}g/L)",
+        hover_data=['sss']
+    )
+    fig_hist = px.histogram(
+        dff,
+        x="sss",
+        color="category",
+        facet_col="category",
+        facet_col_wrap=2,
+        title="Species Distribution by Salinity",
+        labels={'sss': 'Salinity (g/L)', 'count': 'Obs.'},
+        nbins=20
+    )
+    fig_hist.update_yaxes(matches=None, showticklabels=True)
+    fig_hist.update_xaxes(matches='x')
+
+    return fig_map, fig_hist
 
 if __name__ == '__main__':
     app.run(debug=True)
