@@ -3,6 +3,12 @@ from dash import html
 def header():
     #return html.H1("Dashboard", style={'textAlign': 'center'})
     return html.Div([
-        html.Img(src='../images/LogoWhalife.png', alt='image'),
-        html.H1("WhaLife", style={'textAlign': 'center'})
-    ])
+        html.Img(src='/assets/LogoWhalife.png', alt='image', style={'height': '200px', 'width': '200px'}),
+        html.H1("WhaLife", style={'font-family':'/assets/Gluten/Gluten-Light.ttf', 'textAlign': 'center'})
+        ],
+        style={
+            'display': 'flex',
+            'alignItems': 'center',
+            'justifyContent': 'center'
+        }
+    )
