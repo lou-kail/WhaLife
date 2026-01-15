@@ -16,6 +16,7 @@ from src.components.model_viewer import model_viewer
 
 app = Dash(__name__, suppress_callback_exceptions=True)
 
+app.title = "WhaLife"
 data = {}
 compiled_data = []
 
