@@ -4,7 +4,7 @@ import pandas as pd
 import os
 from pathlib import Path
 
-from config import TAXON_IDS
+from config import TAXON_CONFIG
 
 from src.utils.clean_data import clean_data
 from src.utils.get_data import get_data
@@ -18,7 +18,6 @@ app = Dash(__name__, suppress_callback_exceptions=True)
 
 data = {}
 compiled_data = []
-
 if not os.path.exists("data/cleaned"):
     os.makedirs("data/cleaned")
 
@@ -37,7 +36,7 @@ else:
     CLEANED_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     compiled_data = []
-    for species, taxon_id in TAXON_IDS.items():
+    for species, taxon_id in TAXON_CONFIG.items():
         results = get_data(taxon_id, 2500)["results"]
         df_species = pd.DataFrame(results)
 
@@ -49,7 +48,6 @@ else:
 
     df = clean_data(raw_df)
     df.to_csv(CLEANED_FILE, index=False)
-
 # Page Espece
 layout_species = html.Div([
     html.H2("Analysis by Species"),
@@ -62,7 +60,8 @@ layout_species = html.Div([
     html.Div([
         histogram(),
         map_component(),
-        model_viewer("/assets/dolphin.glb")
+        html.Div([model_viewer(f"/assets/{df['category'].unique()[0].lower().replace("%20","_")}.glb")]
+        ,"model-viewer-container")
     ])
 ])
 
@@ -153,6 +152,7 @@ def display_page(pathname):
 @app.callback(
     Output('graph-histogram', 'figure'),
     Output('graph-map', 'figure'),
+    Output('model-viewer-container', 'children'),
     Input('species-selection', 'value')
 )
 def update_graphs(selected_category):
@@ -171,7 +171,8 @@ def update_graphs(selected_category):
         zoom=1,
         title=f"Locations: {selected_category}"
     )
-    return fig_hist, fig_map
+    new_model = model_viewer(f"/assets/{selected_category.lower().replace("%20","_")}.glb")
+    return fig_hist, fig_map, new_model
 
 
 @app.callback(
