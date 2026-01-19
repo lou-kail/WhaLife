@@ -230,13 +230,42 @@ def display_page(pathname):
     Input('species-selection', 'value')
 )
 def update_graphs(selected_category):
-    dff = df[df['category'] == selected_category]
+    dff = df[df['category'] == selected_category].copy()
+
+    dff = dff.dropna(subset=['year'])
+    dff['year'] = dff['year'].astype(int)
+
+    dff_counts = dff.groupby('year').size().reset_index(name='counts')
+    dff_counts = dff_counts.sort_values('year')
+
     print(f"Selected: {selected_category} | Rows found: {len(dff)}")
 
     if dff.empty:
-        return px.scatter(title="No data found"), px.scatter_map(title="No data found")
+        return px.scatter(title="Pas de données"), px.scatter_map(title="Pas de données"), ""
 
-    fig_hist = px.histogram(dff, x='year', title=f"Observations: {selected_category}")
+    fig_hist = px.bar(
+        dff_counts,
+        x=dff_counts['year'].astype(str),
+        y='counts',
+        color='year',
+        title=f"Observations: {selected_category}",
+        color_continuous_scale='Blues'
+    )
+
+    fig_hist.update_traces(
+        marker_line_width=0,
+        opacity=1
+    )
+
+    fig_hist.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        bargap=0.1,
+        yaxis_title="Nombre d'observations",
+        xaxis_title=None,
+        coloraxis_showscale=False,
+        xaxis={'type': 'category'}
+    )
     fig_map = px.scatter_map(
         dff,
         lat="latitude",
@@ -283,8 +312,12 @@ def update_depth(depth_range):
     )
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
+    fig_hist.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',  # Fond du graphique transparent
+        paper_bgcolor='rgba(0,0,0,0)',  # Fond du papier transparent
+        font_color='black'  # (Optionnel) assure que le texte reste lisible
+    )
     return fig_map, fig_hist
-
 
 @app.callback(
     Output('graph-distance-map', 'figure'),
@@ -320,7 +353,11 @@ def update_distance(distance_range):
     )
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
-
+    fig_hist.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',  # Fond du graphique transparent
+        paper_bgcolor='rgba(0,0,0,0)',  # Fond du papier transparent
+        font_color='black'  # (Optionnel) assure que le texte reste lisible
+    )
     return fig_map, fig_hist
 
 @app.callback(
@@ -359,7 +396,11 @@ def update_temperature(temp_range):
     )
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
-
+    fig_hist.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',  # Fond du graphique transparent
+        paper_bgcolor='rgba(0,0,0,0)',  # Fond du papier transparent
+        font_color='black'  # (Optionnel) assure que le texte reste lisible
+    )
     return fig_map, fig_hist
 
 @app.callback(
@@ -398,7 +439,11 @@ def update_salinity(sal_range):
     )
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
-
+    fig_hist.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',  # Fond du graphique transparent
+        paper_bgcolor='rgba(0,0,0,0)',  # Fond du papier transparent
+        font_color='black'  # (Optionnel) assure que le texte reste lisible
+    )
     return fig_map, fig_hist
 
 if __name__ == '__main__':
