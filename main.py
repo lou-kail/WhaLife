@@ -245,7 +245,7 @@ def update_graphs(selected_category):
         zoom=1,
         title=f"Locations: {selected_category}"
     )
-    new_model = model_viewer(f"/assets/{selected_category.lower().replace("%20","_")}.glb")
+    new_model = model_viewer(f"/assets/{selected_category.lower().replace("%20","_").replace(" ","_")}.glb")
     return fig_hist, fig_map, new_model
 
 
