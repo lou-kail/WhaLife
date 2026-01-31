@@ -21,7 +21,7 @@ def clean_data(df):
         return 'Other'
 
     df_clean['category'] = df_clean['scientificName'].apply(categorize_species)
-
+    df_clean = df_clean[df_clean['category'] != 'Other']
     df_clean['eventDate'] = pd.to_datetime(df_clean['eventDate'], errors='coerce')
 
     rename_map = {
