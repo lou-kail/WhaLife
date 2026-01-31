@@ -39,4 +39,4 @@ I declare on my honor that the code provided was produced by Lou Kail and Théo 
 - Data: The data comes from OBIS.
 - API Snippet: The API connection logic in src/utils/get_data.py is inspired by the official OBIS API documentation.
   
-Any line not declared above is deemed to be produced by the author (or authors) of the project. The absence or omission of declaration will be considered plagiarism.
+Any line not declared above is deemed to be produced by Lou Kail and Théo Séré of the project. The absence or omission of declaration will be considered plagiarism.
