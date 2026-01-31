@@ -39,6 +39,7 @@ def load_data():
     try:
         print("🌐 Clean data not found. Attempting to fetch from API...")
         RAW_DIR.mkdir(parents=True, exist_ok=True)
+        CLEANED_FILE.parent.mkdir(parents=True, exist_ok=True)
         compiled_data = []
 
         for species, taxon_id in TAXON_CONFIG.items():
