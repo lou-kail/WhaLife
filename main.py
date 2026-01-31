@@ -29,28 +29,43 @@ if not os.path.exists("data/raw"):
 
 CLEANED_FILE = Path("data/cleaned/cleaned_data.csv")
 RAW_DIR = Path("data/raw")
+FALLBACK_CSV = Path("data/fallback_data.csv")
 
-if CLEANED_FILE.exists():
-    print("Loading clean data from disk...")
-    df = pd.read_csv(CLEANED_FILE)
-else:
-    print("Clean data file not found. Fetching and cleaning data...")
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
-    CLEANED_FILE.parent.mkdir(parents=True, exist_ok=True)
+def load_data():
+    if CLEANED_FILE.exists():
+        print("✅ Loading clean data from disk...")
+        return pd.read_csv(CLEANED_FILE)
 
-    compiled_data = []
-    for species, taxon_id in TAXON_CONFIG.items():
-        results = get_data(taxon_id, 2500)["results"]
-        df_species = pd.DataFrame(results)
+    try:
+        print("🌐 Clean data not found. Attempting to fetch from API...")
+        RAW_DIR.mkdir(parents=True, exist_ok=True)
+        compiled_data = []
 
-        df_species.to_csv(RAW_DIR / f"{species}.csv", index=False)
-        compiled_data.extend(results)
+        for species, taxon_id in TAXON_CONFIG.items():
+            results = get_data(taxon_id, 2500)["results"]
+            df_species = pd.DataFrame(results)
+            df_species.to_csv(RAW_DIR / f"{species}.csv", index=False)
+            compiled_data.extend(results)
 
-    raw_df = pd.DataFrame(compiled_data)
-    raw_df.to_csv(RAW_DIR / "compiled_data.csv", index=False)
+        raw_df = pd.DataFrame(compiled_data)
+        df_final = clean_data(raw_df)
 
-    df = clean_data(raw_df)
-    df.to_csv(CLEANED_FILE, index=False)
+        CLEANED_FILE.parent.mkdir(parents=True, exist_ok=True)
+        df_final.to_csv(CLEANED_FILE, index=False)
+        return df_final
+
+    except Exception as e:
+        print(f"⚠️ Fetch failed (No internet or API error): {e}")
+        if FALLBACK_CSV.exists():
+            print(f"💾 Using local fallback: {FALLBACK_CSV}")
+            fallback = pd.read_csv(FALLBACK_CSV, low_memory=False)
+            return fallback
+        else:
+            print("❌ Error: No clean data, no internet, and no fallback data found.")
+            return pd.DataFrame(
+                columns=['category', 'bathymetry', 'sst', 'sss', 'shoredistance', 'latitude', 'longitude', 'year'])
+
+df = load_data()
 
 menu_button_style = {
     'backgroundColor': '#007bff', 'color': 'white', 'border': 'none',
