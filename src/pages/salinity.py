@@ -1,29 +1,37 @@
-from dash import html, dcc
+from dash import html, dcc, Output, Input, State, callback
+import plotly.express as px
+import pandas as pd
+
 
 def layout_salinity(df):
-    min_sal = df['sss'].min()
-    max_sal = df['sss'].max()
     return html.Div([
-        html.H2("Analysis by Water Salinity"),
-        html.Label("Select Salinity Range (g/L):"),
-
+        html.H2("Analysis by Salinity"),
+        dcc.RangeSlider(
+            id='sal-slider',
+            min=df['sss'].min(),
+            max=df['sss'].max(),
+            value=[df['sss'].min(), df['sss'].max()],
+            tooltip={"placement": "bottom", "always_visible": True}
+        ),
         html.Div([
-            html.Label(f"Filter by salinity ({int(min_sal)}g/L - {int(max_sal)}g/L):"),
-            dcc.RangeSlider(
-                min=min_sal,
-                max=max_sal, #int(max_sal) + 1,
-                step=0.5,
-                value=[min_sal, max_sal],
-                marks={i: f'{i}g/L' for i in range(int(min_sal), int(max_sal) + 1, 5)},
-                tooltip={"placement": "bottom", "always_visible": True},
-                id='sal-slider'
-            )
-        ], style={'padding': '20px'}),
-
-        html.Div([
-            # Carte à gauche
             dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
-            # Histogramme à droite
             dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
         ])
     ])
+
+
+@callback(
+    Output('graph-sal-map', 'figure'),
+    Output('graph-sal-hist', 'figure'),
+    Input('sal-slider', 'value'),
+    State('main-data-store', 'data')
+)
+def update_salinity_page(val_range, stored_data):
+    if not stored_data: return px.scatter(), px.scatter()
+    dff = pd.DataFrame(stored_data)
+    dff = dff[(dff['sss'] >= val_range[0]) & (dff['sss'] <= val_range[1])]
+
+    fig_map = px.scatter_map(dff, lat="latitude", lon="longitude", color="category", zoom=1,
+                             map_style="open-street-map")
+    fig_hist = px.histogram(dff, x="sss", color="category", title="Distribution by Salinity")
+    return fig_map, fig_hist
