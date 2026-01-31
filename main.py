@@ -10,9 +10,14 @@ from src.utils.clean_data import clean_data
 from src.utils.get_data import get_data
 
 from src.components.header import header
-from src.components.map import map_component
-from src.components.histogram import histogram
 from src.components.model_viewer import model_viewer
+
+from src.pages.salinity import layout_salinity
+from src.pages.shore_distance import layout_distance
+from src.pages.species import layout_species
+from src.pages.temperature import layout_temperature
+from src.pages.depth import layout_depth
+
 
 app = Dash(__name__, suppress_callback_exceptions=True)
 
@@ -119,150 +124,6 @@ SPECIES_INFO = {
     )
 }
 
-# Page Espece
-layout_species = html.Div([
-    html.H2("Analysis by Species"),
-    html.Label("Select Species to Analyze:"),
-    dcc.Dropdown(
-        options=[{'label': i, 'value': i} for i in df['category'].unique()],
-        value=df['category'].unique()[0],
-        id='species-selection'
-    ),
-    html.Div([
-        histogram(),
-        map_component(),
-        html.Div([
-            html.Div(
-                id='model-viewer-container',
-                children=[model_viewer(f"/assets/{df['category'].unique()[0].lower().replace(' ', '_')}.glb")],
-                style={'flex': '1', 'padding': '10px'}  # flex: 1 prend 50% de l'espace
-            ),
-            html.Div([
-                html.H3("Description", style={'marginTop': '0'}),
-                html.Div(
-                    id='species-description',
-                    children=SPECIES_INFO.get(df['category'].unique()[0], "Description non disponible."),
-                    style={'fontSize': '1.1em', 'lineHeight': '1.6', 'textAlign': 'justify'}
-                )
-            ], style={'flex': '1', 'padding': '20px', 'backgroundColor': '#f8f9fa', 'borderRadius': '10px'})
-
-        ], style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'center', 'margin': '20px 0'})
-    ])
-])
-
-# Page Profondeur
-max_depth = int(df['bathymetry'].max())
-step_marks_depth = max_depth // 5
-
-layout_depth = html.Div([
-    html.H2("Analysis by Depth"),
-    html.Label("Select Depth:"),
-
-    html.Div([
-        html.Label("Filter by depth (meters) :"),
-        dcc.RangeSlider(
-            min=df['bathymetry'].min(),
-            max=df['bathymetry'].max(),
-            step=50,
-            value=[df['bathymetry'].min(), df['bathymetry'].max()],
-            marks={i: f'{i}m' for i in range(0, max_depth + 1, step_marks_depth)},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='depth-slider'
-        )
-    ], style={'padding': '20px'}),
-    html.Div([
-        dcc.Graph(id='graph-depth-map', style={'width': '48%', 'display': 'inline-block'}),
-        dcc.Graph(id='graph-depth-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
-])
-
-# Page Distance des Cotes
-max_dist_val = df['shoredistance'].quantile(0.98)
-max_dist = int(max_dist_val)
-step = max_dist // 5
-if step == 0: step = 1
-magnitude = 10 ** (len(str(step)) - 1)
-clean_step = round(step / magnitude) * magnitude
-if clean_step == 0: clean_step = step
-
-layout_distance = html.Div([
-    html.H2("Analysis by Distance to Coast"),
-    html.Label("Select Distance:"),
-
-    html.Div([
-        html.Label(f"Filter by distance (0 - {max_dist} meters):"),
-        dcc.RangeSlider(
-            min=0,
-            max=max_dist,
-            step=clean_step / 10,
-            value=[0, max_dist],
-            marks={i: f'{i}m' for i in range(0, max_dist + 1, int(clean_step))},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='distance-slider'
-        )
-    ], style={'padding': '20px'}),
-    html.Div([
-        dcc.Graph(id='graph-distance-map', style={'width': '48%', 'display': 'inline-block'}),
-        dcc.Graph(id='graph-distance-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
-])
-
-# Page temperature
-min_temp = df['sst'].min()
-max_temp = df['sst'].max()
-layout_temperature = html.Div([
-    html.H2("Analysis by Water Temperature"),
-    html.Label("Select Temperature Range (°C):"),
-
-    html.Div([
-        html.Label(f"Filter by temperature ({int(min_temp)}°C - {int(max_temp)}°C):"),
-        dcc.RangeSlider(
-            min=int(min_temp),
-            max=int(max_temp) + 1,
-            step=0.5,
-            value=[int(min_temp), int(max_temp)],
-            marks={i: f'{i}°C' for i in range(int(min_temp), int(max_temp) + 1, 5)},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='temp-slider'
-        )
-    ], style={'padding': '20px'}),
-
-    html.Div([
-        # Carte à gauche
-        dcc.Graph(id='graph-temp-map', style={'width': '48%', 'display': 'inline-block'}),
-        # Histogramme à droite
-        dcc.Graph(id='graph-temp-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
-])
-
-# Page salinité
-min_sal = df['sss'].min()
-max_sal = df['sss'].max()
-layout_salinity = html.Div([
-    html.H2("Analysis by Water Salinity"),
-    html.Label("Select Salinity Range (g/L):"),
-
-    html.Div([
-        html.Label(f"Filter by salinity ({int(min_sal)}g/L - {int(max_sal)}g/L):"),
-        dcc.RangeSlider(
-            min=min_sal,
-            max=max_sal, #int(max_sal) + 1,
-            step=0.5,
-            value=[min_sal, max_sal],
-            marks={i: f'{i}g/L' for i in range(int(min_sal), int(max_sal) + 1, 5)},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='sal-slider'
-        )
-    ], style={'padding': '20px'}),
-
-    html.Div([
-        # Carte à gauche
-        dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
-        # Histogramme à droite
-        dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
-])
-
 # Layout Principal
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -280,19 +141,25 @@ app.layout = html.Div([
 
 # --- Callbacks ---
 
+salinity = layout_salinity(df)
+depth = layout_depth(df)
+temperature = layout_temperature(df)
+distance = layout_distance(df)
+species = layout_species(df)
+
 @app.callback(Output('page-content', 'children'),
               Input('url', 'pathname'))
 def display_page(pathname):
     if pathname == '/depth':
-        return layout_depth
+        return depth
     elif pathname == '/distance':
-        return layout_distance
+        return distance
     elif pathname == '/temperature':
-        return layout_temperature
+        return temperature
     elif pathname == '/salinity':
-        return layout_salinity
+        return salinity
     else:
-        return layout_species
+        return species
 
 
 @app.callback(
