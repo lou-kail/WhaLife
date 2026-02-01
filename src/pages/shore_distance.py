@@ -19,7 +19,7 @@ def layout_distance(df):
 
     html.Div([
         html.Label(f"Filter by distance (0 - {max_dist} meters):"),
-        slider(0, max_dist, clean_step / 10, int(clean_step), "distance-slider")
+        slider(0, max_dist, "m", clean_step / 10, int(clean_step), "distance-slider")
     ], style={'padding': '20px'}),
     html.Div([
         dcc.Graph(id='graph-distance-map', style={'width': '48%', 'display': 'inline-block'}),

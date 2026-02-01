@@ -15,7 +15,7 @@ def layout_salinity(df):
 
     html.Div([
         html.Label(f"Filter by salinity ({int(min_sal)}g/L - {int(max_sal)}g/L):"),
-        slider(min_sal, max_sal, 0.5, 5, "sal-slider")
+        slider(min_sal, max_sal, "g/L", 0.5, 5, "sal-slider")
     ], style={'padding': '20px'}),
 
     html.Div([

@@ -14,7 +14,7 @@ def layout_temperature(df):
 
     html.Div([
         html.Label(f"Filter by temperature ({int(min_temp)}°C - {int(max_temp)}°C):"),
-        slider(int(min_temp), int(max_temp) + 1, 0.5, 5, "temp-slider")
+        slider(int(min_temp), int(max_temp), "°C", 0.5, 5, "temp-slider")
     ], style={'padding': '20px'}),
 
     html.Div([

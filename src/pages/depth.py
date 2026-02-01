@@ -21,7 +21,7 @@ def layout_depth(df):
 
         html.Div([
             html.Label("Filter by depth (meters) :"),
-            slider(slider_min, slider_max, step, step_marks_depth, "depth-slider")
+            slider(slider_min, slider_max, "m", step, step_marks_depth, "depth-slider")
         ], style={'padding': '20px'}),
         html.Div([
             dcc.Graph(id='graph-depth-map', style={'width': '48%', 'display': 'inline-block'}),
