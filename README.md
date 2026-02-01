@@ -91,7 +91,7 @@ The project is structured in a modular way:
 We declare on our honor that the code and assets provided were produced by us, Lou Kail and Théo Séré, with the exception of the elements below:
 - **Third-party libraries**: The application relies on the open-source libraries [Dash](https://dash.plotly.com/), [Pandas](https://pandas.pydata.org/), [Plotly](https://plotly.com/python/) and [<model-viewer>](https://modelviewer.dev/).
 - **Font**: The imported font is Gluten, retrieved from [Google Fonts](https://fonts.google.com/specimen/Gluten)
-- **3D models**: The .glb files present in the assets/ folder (whales ([humpback](https://skfb.ly/oHQvR) and [blue](https://skfb.ly/67RFV)), [orcas](https://skfb.ly/THDz), [dolphins](https://skfb.ly/oRv8t)) are illustrative models.
+- **3D models**: The .glb files present in the assets/ folder (whales ([humpback](https://skfb.ly/oHQvR) and [blue](https://skfb.ly/67RFV)), [orcas](https://skfb.ly/THDz), [dolphins](https://skfb.ly/pxvuw)) are illustrative models.
 - **Data**: The data comes from OBIS.
 - **API Snippet**: The API connection logic in src/utils/get_data.py is inspired by the official [OBIS API documentation](https://api.obis.org/).
   
