@@ -12,7 +12,6 @@ def model_viewer(file_path):
             auto-rotate>
         </model-viewer>
     '''
-
     return html.Iframe(
         id='model-viewer',
         srcDoc=viewer_html,

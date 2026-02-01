@@ -1,6 +1,9 @@
 from dash import html, dcc, Output, Input, State, callback
 import plotly.express as px
 import pandas as pd
+from src.components.slider import slider
+from src.components.scatter_map import scatter_map
+from src.components.histogram import histogram
 
 def layout_temperature(df):
     min_temp = df['sst'].min()
@@ -11,23 +14,19 @@ def layout_temperature(df):
 
     html.Div([
         html.Label(f"Filter by temperature ({int(min_temp)}°C - {int(max_temp)}°C):"),
-        dcc.RangeSlider(
-            min=int(min_temp),
-            max=int(max_temp) + 1,
-            step=0.5,
-            value=[int(min_temp), int(max_temp)],
-            marks={i: f'{i}°C' for i in range(int(min_temp), int(max_temp) + 1, 5)},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='temp-slider'
-        )
+        slider(int(min_temp), int(max_temp), "°C", 0.5, 5, "temp-slider")
     ], style={'padding': '20px'}),
-
-    html.Div([
+    dcc.Loading(
+        id="loading-temperature",
+        type="circle",
+        color="#007bff",
+        children=html.Div([
         # Carte à gauche
         dcc.Graph(id='graph-temp-map', style={'width': '48%', 'display': 'inline-block'}),
         # Histogramme à droite
         dcc.Graph(id='graph-temp-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
     ])
+    )
 ])
 
 
@@ -42,28 +41,8 @@ def update_temp_page(val_range, stored_data):
 
     dff = pd.DataFrame(stored_data)
     dff = dff[(dff['sst'] >= val_range[0]) & (dff['sst'] <= val_range[1])]
-
-    fig_map = px.scatter_map(
-        dff,
-        lat="latitude",
-        lon="longitude",
-        color="category",
-        size_max=15,
-        zoom=1,
-        map_style="open-street-map",
-        title=f"Locations (Temp: {val_range[0]}°C - {val_range[1]}°C)",
-        hover_data=['sst']
-    )
-    fig_hist = px.histogram(
-        dff,
-        x="sst",
-        color="category",
-        facet_col="category",
-        facet_col_wrap=2,
-        title="Species Distribution by Temperature",
-        labels={'sst': 'Temperature (°C)', 'count': 'Obs.'},
-        nbins=20
-    )
+    fig_map = scatter_map(dff, f"Locations (Temp: {val_range[0]}°C - {val_range[1]}°C)", 'sst')
+    fig_hist = histogram(dff, "sst", "Species Distribution by Temperature", {'sst': 'Temperature (°C)', 'count': 'Obs.'})
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
     fig_hist.update_layout(

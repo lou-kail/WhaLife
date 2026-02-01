@@ -1,7 +1,9 @@
 from dash import html, dcc, Output, Input, State, callback
 import plotly.express as px
 import pandas as pd
-
+from src.components.slider import slider
+from src.components.scatter_map import scatter_map
+from src.components.histogram import histogram
 
 def layout_salinity(df):
     min_sal = df['sss'].min()
@@ -13,23 +15,19 @@ def layout_salinity(df):
 
     html.Div([
         html.Label(f"Filter by salinity ({int(min_sal)}g/L - {int(max_sal)}g/L):"),
-        dcc.RangeSlider(
-            min=min_sal,
-            max=max_sal, #int(max_sal) + 1,
-            step=0.5,
-            value=[min_sal, max_sal],
-            marks={i: f'{i}g/L' for i in range(int(min_sal), int(max_sal) + 1, 5)},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='sal-slider'
-        )
+        slider(min_sal, max_sal, "g/L", 0.5, 5, "sal-slider")
     ], style={'padding': '20px'}),
-
-    html.Div([
-        # Carte à gauche
-        dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
-        # Histogramme à droite
-        dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
+        dcc.Loading(
+            id="loading-salinity",
+            type="circle",
+            color="#007bff",
+            children=html.Div([
+            # Carte à gauche
+            dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
+            # Histogramme à droite
+            dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+            ])
+        )
 ])
 
 @callback(
@@ -43,27 +41,8 @@ def update_salinity_page(val_range, stored_data):
     dff = pd.DataFrame(stored_data)
     dff = dff[(dff['sss'] >= val_range[0]) & (dff['sss'] <= val_range[1])]
 
-    fig_map = px.scatter_map(
-        dff,
-        lat="latitude",
-        lon="longitude",
-        color="category",
-        size_max=15,
-        zoom=1,
-        map_style="open-street-map",
-        title=f"Locations (Sal: {val_range[0]}g/L - {val_range[1]}g/L)",
-        hover_data=['sss']
-    )
-    fig_hist = px.histogram(
-        dff,
-        x="sss",
-        color="category",
-        facet_col="category",
-        facet_col_wrap=2,
-        title="Species Distribution by Salinity",
-        labels={'sss': 'Salinity (g/L)', 'count': 'Obs.'},
-        nbins=20
-    )
+    fig_map = scatter_map(dff, f"Locations (Sal: {val_range[0]}g/L - {val_range[1]}g/L)", 'sss')
+    fig_hist = histogram(dff, 'sss', "Species Distribution by Salinity", {'sss': 'Salinity (g/L)', 'count': 'Obs.'})
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
     fig_hist.update_layout(
