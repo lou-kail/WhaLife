@@ -24,7 +24,7 @@ def layout_depth(df):
             slider(slider_min, slider_max, "m", step, step_marks_depth, "depth-slider")
         ], style={'padding': '20px'}),
         dcc.Loading(
-            id="loading-temperature",
+            id="loading-depth",
             type="circle",
             color="#007bff",
             children= html.Div([
