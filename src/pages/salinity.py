@@ -17,13 +17,17 @@ def layout_salinity(df):
         html.Label(f"Filter by salinity ({int(min_sal)}g/L - {int(max_sal)}g/L):"),
         slider(min_sal, max_sal, "g/L", 0.5, 5, "sal-slider")
     ], style={'padding': '20px'}),
-
-    html.Div([
-        # Carte à gauche
-        dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
-        # Histogramme à droite
-        dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
+        dcc.Loading(
+            id="loading-salinity",
+            type="circle",
+            color="#007bff",
+            children=html.Div([
+            # Carte à gauche
+            dcc.Graph(id='graph-sal-map', style={'width': '48%', 'display': 'inline-block'}),
+            # Histogramme à droite
+            dcc.Graph(id='graph-sal-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+            ])
+        )
 ])
 
 @callback(

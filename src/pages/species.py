@@ -13,7 +13,11 @@ def layout_species(df):
             value=df['category'].unique()[0],
             id='species-selection'
         ),
-        html.Div([
+        dcc.Loading(
+            id="loading-species",
+            type="circle",
+            color="#007bff",
+            children=html.Div([
             dcc.Graph(id='graph-histogram', style={'width': '48%', 'display': 'inline-block'}),
             dcc.Graph(id='graph-map', style={'width': '48%', 'display': 'inline-block'}),
             html.Div([
@@ -33,6 +37,7 @@ def layout_species(df):
 
             ], style={'display': 'flex', 'flexDirection': 'row', 'alignItems': 'center', 'margin': '20px 0'})
         ])
+        )
     ])
 
 

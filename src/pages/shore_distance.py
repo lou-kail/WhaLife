@@ -21,10 +21,15 @@ def layout_distance(df):
         html.Label(f"Filter by distance (0 - {max_dist} meters):"),
         slider(0, max_dist, "m", clean_step / 10, int(clean_step), "distance-slider")
     ], style={'padding': '20px'}),
-    html.Div([
+    dcc.Loading(
+        id="loading-distance",
+        type="circle",
+        color="#007bff",
+        children=html.Div([
         dcc.Graph(id='graph-distance-map', style={'width': '48%', 'display': 'inline-block'}),
         dcc.Graph(id='graph-distance-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-    ])
+        ])
+    )
 ])
 
 

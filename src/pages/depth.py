@@ -23,10 +23,15 @@ def layout_depth(df):
             html.Label("Filter by depth (meters) :"),
             slider(slider_min, slider_max, "m", step, step_marks_depth, "depth-slider")
         ], style={'padding': '20px'}),
-        html.Div([
-            dcc.Graph(id='graph-depth-map', style={'width': '48%', 'display': 'inline-block'}),
-            dcc.Graph(id='graph-depth-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
-        ])
+        dcc.Loading(
+            id="loading-temperature",
+            type="circle",
+            color="#007bff",
+            children= html.Div([
+                dcc.Graph(id='graph-depth-map', style={'width': '48%', 'display': 'inline-block'}),
+                dcc.Graph(id='graph-depth-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
+            ])
+        )
     ])
 
 

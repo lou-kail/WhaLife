@@ -16,13 +16,17 @@ def layout_temperature(df):
         html.Label(f"Filter by temperature ({int(min_temp)}°C - {int(max_temp)}°C):"),
         slider(int(min_temp), int(max_temp), "°C", 0.5, 5, "temp-slider")
     ], style={'padding': '20px'}),
-
-    html.Div([
+    dcc.Loading(
+        id="loading-temperature",
+        type="circle",
+        color="#007bff",
+        children=html.Div([
         # Carte à gauche
         dcc.Graph(id='graph-temp-map', style={'width': '48%', 'display': 'inline-block'}),
         # Histogramme à droite
         dcc.Graph(id='graph-temp-hist', style={'width': '48%', 'display': 'inline-block', 'float': 'right'})
     ])
+    )
 ])
 
 
