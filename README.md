@@ -54,8 +54,19 @@ graph TD
     end
 
     subgraph "Composants (src/components/)"
-        P1 --> Comp1[header]
-        P1 --> Comp2[model_viewer]
+        P1 --> Comp1[model_viewer]
+        P2 --> Comp2[histogram]        
+        P2 --> Comp3[scatter_map]
+        P2 --> Comp4[slider]
+        P3 --> Comp2[histogram]
+        P3 --> Comp3[scatter_map]
+        P3 --> Comp4[slider]
+        P4 --> Comp2[histogram]
+        P4 --> Comp3[scatter_map]
+        P4 --> Comp4[slider]
+        P5 --> Comp2[histogram]
+        P5 --> Comp3[scatter_map]
+        P5 --> Comp4[slider]
     end
 
     %% Styles pour plus de clarté
