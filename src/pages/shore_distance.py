@@ -1,7 +1,9 @@
 from dash import html, dcc, Output, Input, State, callback
 import plotly.express as px
 import pandas as pd
-
+from src.components.slider import slider
+from src.components.scatter_map import scatter_map
+from src.components.histogram import histogram
 
 def layout_distance(df):
     max_dist_val = df['shoredistance'].quantile(0.98)
@@ -17,15 +19,7 @@ def layout_distance(df):
 
     html.Div([
         html.Label(f"Filter by distance (0 - {max_dist} meters):"),
-        dcc.RangeSlider(
-            min=0,
-            max=max_dist,
-            step=clean_step / 10,
-            value=[0, max_dist],
-            marks={i: f'{i}m' for i in range(0, max_dist + 1, int(clean_step))},
-            tooltip={"placement": "bottom", "always_visible": True},
-            id='distance-slider'
-        )
+        slider(0, max_dist, clean_step / 10, int(clean_step), "distance-slider")
     ], style={'padding': '20px'}),
     html.Div([
         dcc.Graph(id='graph-distance-map', style={'width': '48%', 'display': 'inline-block'}),
@@ -49,28 +43,8 @@ def update_dist_page(val_range, stored_data):
         min_dist, max_dist = val_range
 
     dff = dff[(dff['shoredistance'] >= val_range[0]) & (dff['shoredistance'] <= val_range[1])]
-
-    fig_map = px.scatter_map(
-        dff,
-        lat="latitude",
-        lon="longitude",
-        color="category",
-        size_max=15,
-        zoom=1,
-        map_style="open-street-map",
-        title=f"Locations (Distance: {min_dist}m - {max_dist}m)",
-        hover_data=['shoredistance']
-    )
-    fig_hist = px.histogram(
-        dff,
-        x="shoredistance",
-        color="category",
-        facet_col="category",
-        facet_col_wrap=2,
-        title="Species Distribution by Distance",
-        labels={'shoredistance': 'Distance (m)', 'count': 'Obs.'},
-        nbins=20
-    )
+    fig_map = scatter_map(dff, f"Locations (Distance: {min_dist}m - {max_dist}m)", 'shoredistance')
+    fig_hist = histogram(dff, "shoredistance","Species Distribution by Distance", {'shoredistance': 'Distance (m)', 'count': 'Obs.'})
     fig_hist.update_yaxes(matches=None, showticklabels=True)
     fig_hist.update_xaxes(matches='x')
     fig_hist.update_layout(

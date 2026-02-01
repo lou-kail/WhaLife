@@ -2,8 +2,6 @@ from dash import html, dcc, Output, Input, State, callback
 import plotly.express as px
 import pandas as pd
 from src.components.model_viewer import model_viewer
-from src.components.map import map_component
-from src.components.histogram import histogram
 from config import SPECIES_INFO
 
 def layout_species(df):
@@ -16,8 +14,8 @@ def layout_species(df):
             id='species-selection'
         ),
         html.Div([
-            histogram(),
-            map_component(),
+            dcc.Graph(id='graph-histogram', style={'width': '48%', 'display': 'inline-block'}),
+            dcc.Graph(id='graph-map', style={'width': '48%', 'display': 'inline-block'}),
             html.Div([
                 html.Div(
                     id='model-viewer-container',
